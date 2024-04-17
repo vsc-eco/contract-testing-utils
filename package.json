@@ -1,7 +1,7 @@
 {
   "name": "@vsc.eco/contract-testing-utils",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.1",
   "module": "./dist/@vsc.eco/contract-testing-utils.mjs",
   "exports": {
     ".": {
@@ -30,7 +30,7 @@
     "format": "yarn format:scripts && yarn format:styles",
     "prepare": "husky install && husky set .husky/pre-commit 'yarn lint-staged' && git add .husky/pre-commit",
     "uninstall-husky": "yarn remove husky --no-save && git config --unset core.hooksPath && yarn rimraf .husky",
-    "release": "standard-version && git push --follow-tags origin main && yarn publish && git reset --hard CHANGELOG.md"
+    "release": "standard-version && git push --follow-tags origin main && npm publish && git reset --hard CHANGELOG.md"
   },
   "dependencies": {
     "assemblyscript": "^0.27.27",
