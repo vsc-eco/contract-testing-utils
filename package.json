@@ -1,6 +1,5 @@
 {
   "name": "@vsc.eco/contract-testing-utils",
-  "private": true,
   "version": "0.0.1",
   "module": "./dist/@vsc.eco/contract-testing-utils.mjs",
   "exports": {
