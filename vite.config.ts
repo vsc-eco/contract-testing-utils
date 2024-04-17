@@ -17,17 +17,22 @@ const getPackageNameCamelCase = () => {
 
 const fileName = {
   es: `${getPackageName()}.mjs`,
-  cjs: `${getPackageName()}.cjs`,
-  iife: `${getPackageName()}.iife.js`,
 };
 
 const formats = Object.keys(fileName) as Array<keyof typeof fileName>;
 
 module.exports = defineConfig({
   base: "./",
+  esbuild: {
+    supported: {
+      "top-level-await": true,
+    },
+  },
   build: {
     rollupOptions: {
-      external: Object.keys(packageJson.dependencies),
+      external: Object.keys(packageJson.dependencies).concat([
+        "node:fs/promises",
+      ]),
     },
     outDir: "./dist",
     lib: {

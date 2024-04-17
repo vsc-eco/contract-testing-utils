@@ -2,25 +2,25 @@
   "name": "@vsc.eco/contract-testing-utils",
   "private": true,
   "version": "0.0.0",
-  "main": "./dist/@vsc.eco/contract-testing-utils.cjs",
   "module": "./dist/@vsc.eco/contract-testing-utils.mjs",
   "exports": {
     ".": {
-      "require": "./dist/@vsc.eco/contract-testing-utils.cjs",
       "import": "./dist/@vsc.eco/contract-testing-utils.mjs"
     },
     "./dist/": {
-      "import": "./dist/",
-      "require": "./dist/"
-    }
+      "import": "./dist/"
+    },
+    "./contract": "./contract.d.ts",
+    "./debugTransform": "./dist/debugTransform.mjs"
   },
   "types": "./dist/index.d.ts",
   "files": [
-    "./dist/*"
+    "./dist/*",
+    "./contract.d.ts"
   ],
   "scripts": {
     "dev": "vite --host",
-    "build": "rimraf build/**/* && tsc && vite build && dts-bundle-generator --config ./dts-bundle-generator.config.ts && copyfiles ./package.json build",
+    "build": "rimraf build/**/* && tsc && vite build && node ./build-types.js && cp src/ascDebugTransform.js dist/debugTransform.mjs && rm $(npx glob src/**/*.js*)",
     "test": "vitest",
     "test:coverage": "vitest --coverage",
     "lint:scripts": "eslint . --ext .ts",
@@ -30,22 +30,28 @@
     "format": "yarn format:scripts && yarn format:styles",
     "prepare": "husky install && husky set .husky/pre-commit 'yarn lint-staged' && git add .husky/pre-commit",
     "uninstall-husky": "yarn remove husky --no-save && git config --unset core.hooksPath && yarn rimraf .husky",
-    "release": "standard-version && git push --follow-tags origin master && yarn publish && git reset CHANGELOG.md"
+    "release": "standard-version && git push --follow-tags origin main && yarn publish && git reset --hard CHANGELOG.md"
   },
-  "dependencies": {},
+  "dependencies": {
+    "assemblyscript": "^0.27.27",
+    "bitcoinjs-lib": "^6.1.5",
+    "mocha": "^10.4.0"
+  },
   "devDependencies": {
     "@types/jsdom": "^21.1.6",
+    "@types/mocha": "^10.0.6",
     "@types/node": "^20.11.5",
     "@typescript-eslint/eslint-plugin": "^6.19.1",
     "@typescript-eslint/parser": "^6.19.1",
     "@vitest/coverage-v8": "^1.2.1",
     "copyfiles": "^2.4.1",
-    "dts-bundle-generator": "^9.2.4",
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.1.3",
+    "glob": "^10.3.12",
     "husky": "^8.0.3",
     "lint-staged": "^15.2.0",
+    "npm-dts": "^1.3.12",
     "postcss": "^8.4.33",
     "postcss-scss": "^4.0.9",
     "prettier": "^3.2.4",
