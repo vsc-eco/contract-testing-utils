@@ -214,7 +214,7 @@ const globals = {
 
       IOGas = IOGas + val.length; // Total serialized length of gas
 
-      return value; //insta.exports.__newString(val);
+      return value ?? "null"; //insta.exports.__newString(val);
     },
     "db.delObject": (keyPtr: string) => {
       const key = keyPtr; //(insta as any).exports.__getString(keyPtr);
