@@ -1,4 +1,5 @@
 import { ripemd160, sha256 } from "bitcoinjs-lib/src/crypto";
+import { ser, ValidateSPV } from "@summa-tx/bitcoin-spv-js";
 
 import { has } from "./utils";
 
@@ -135,6 +136,14 @@ const contractCalls = {
       | { [Symbol.toPrimitive](hint: "string"): string }
   ) => {
     return ripemd160(Buffer.from(value, "hex")).toString("hex");
+  },
+  "bitcoin.validateSPVProof"(value: string) {
+    try {
+      return ValidateSPV.validateProof(ser.deserializeSPVProof(value));
+    } catch (e) {
+      console.warn("bitcoin.validateSPVProof threw an error:", e);
+      return false;
+    }
   },
 };
 

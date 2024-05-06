@@ -443,6 +443,11 @@
   resolved "https://registry.yarnpkg.com/@sinclair/typebox/-/typebox-0.27.8.tgz#6667fac16c436b5434a387a34dedb013198f6e6e"
   integrity sha512-+Fj43pSMwJs4KRrH/938Uf+uAELIgVBmQzg/q1YG10djyfA3TnrU8N8XzqCh/okZdszqBQTZf96idMfE5lnwTA==
 
+"@summa-tx/bitcoin-spv-js@^4.0.2":
+  version "4.0.2"
+  resolved "https://registry.yarnpkg.com/@summa-tx/bitcoin-spv-js/-/bitcoin-spv-js-4.0.2.tgz#527664a83323d8a984d98dd84bf8bd21899e5cc4"
+  integrity sha512-VjiZDytmNvvAaYgx/Ngf3hoO2Fyrir3+nTiHWCS2XgA6a5KjgzVX2I64EaepbuD3Ib/alqi2jaqYiVJ8owQxAw==
+
 "@tsconfig/node10@^1.0.7":
   version "1.0.9"
   resolved "https://registry.yarnpkg.com/@tsconfig/node10/-/node10-1.0.9.tgz#df4907fc07a886922637b15e02d4cebc4c0021b2"
