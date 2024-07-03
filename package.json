@@ -1,6 +1,6 @@
 {
   "name": "@vsc.eco/contract-testing-utils",
-  "version": "0.0.10",
+  "version": "0.1.1",
   "module": "./dist/@vsc.eco/contract-testing-utils.mjs",
   "exports": {
     ".": {
@@ -29,7 +29,7 @@
     "format": "yarn format:scripts && yarn format:styles",
     "prepare": "husky install && husky set .husky/pre-commit 'yarn lint-staged' && git add .husky/pre-commit",
     "uninstall-husky": "yarn remove husky --no-save && git config --unset core.hooksPath && yarn rimraf .husky",
-    "release": "standard-version && git push --follow-tags origin main && npm publish && git reset --hard CHANGELOG.md"
+    "release": "standard-version && git push --follow-tags origin main && npm publish && git reset --hard"
   },
   "dependencies": {
     "@summa-tx/bitcoin-spv-js": "^4.0.2",
