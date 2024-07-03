@@ -1,6 +1,6 @@
 {
   "name": "@vsc.eco/contract-testing-utils",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "module": "./dist/@vsc.eco/contract-testing-utils.mjs",
   "exports": {
     ".": {
