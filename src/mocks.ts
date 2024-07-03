@@ -1,7 +1,33 @@
 import { ripemd160, sha256 } from "bitcoinjs-lib/src/crypto";
 import { ser, ValidateSPV } from "@summa-tx/bitcoin-spv-js";
+import sift, { Query } from "sift";
+import { bech32 } from "bech32";
 
 import { has } from "./utils";
+
+interface LedgerIn {
+  amount: number;
+  from: string;
+  owner: string;
+  unit: "HBD" | "HIVE";
+  dest?: string;
+}
+interface LedgerOut {
+  amount: number;
+  owner: string;
+  to: string;
+  unit: "HBD" | "HIVE";
+  dest?: string;
+}
+export type LedgerType = LedgerIn | LedgerOut;
+
+export type BalanceSnapshot = {
+  account: string;
+  tokens: {
+    HIVE: number;
+    HBD: number;
+  };
+};
 
 if (typeof globalThis.alert !== "undefined") {
   await import("mocha").then(Mocha => {
@@ -11,6 +37,18 @@ if (typeof globalThis.alert !== "undefined") {
   });
 }
 
+/**
+ * The address of the {@link contract} when being executed.
+ *
+ * This does not get cleared when {@link reset()} is called
+ *
+ * @default
+ * bech32.encode("vs4", bech32.toWords(new Uint8Array(32)))
+ */
+export let contract_id: string = bech32.encode(
+  "vs4",
+  bech32.toWords(new Uint8Array(32))
+);
 /**
  * Raw WebAssembly Memory
  */
@@ -52,7 +90,34 @@ export let contractEnv: {
 /**
  * Cache for current contract state
  */
-export const stateCache = new Map();
+export const stateCache = new Map<string, string>();
+/**
+ * @readonly
+ * Temporary cache for current contract state before transaction is finalized
+ * @see {@link finalizeTransaction}
+ */
+export const tmpState = new Map<string, string>();
+/**
+ * HBD & Hive balances for all addresses
+ */
+export const balanceSnapshots = new Map<string, BalanceSnapshot>();
+/**
+ * Finalized HBD & Hive transactions
+ */
+export let ledgerStack: LedgerType[] = [];
+/**
+ * @readonly
+ * Temporary HBD & Hive transactions before transaction is finalized
+ * @see {@link finalizeTransaction}
+ */
+export let ledgerStackTemp: LedgerType[] = [];
+/**
+ * The intents of the transaction
+ */
+export let intents: {
+  name: string;
+  args: Record<string, unknown>;
+}[] = [];
 /**
  * Contract instance
  */
@@ -91,12 +156,22 @@ async function instantiateContract<
 
 let importer: Promise<VscContractTestingUtils.ContractType>;
 
+/**
+ * Sets the contract module in a type safe way
+ * @param importPromise an import {@link Promise} to the contract module
+ *
+ * @example
+ * setContractImport(import('../build/debug'))
+ */
 export function setContractImport(
   importPromise: Promise<VscContractTestingUtils.ContractType>
 ) {
   importer = importPromise;
 }
 
+/**
+ * Cleans up all state accessable from this module including creation of a new {@link contract} instance
+ */
 export async function reset() {
   memory = new WebAssembly.Memory({
     initial: 10,
@@ -116,7 +191,80 @@ export async function reset() {
     "tx.origin": "",
   };
   stateCache.clear();
+  tmpState.clear();
+  ledgerStack = [];
+  ledgerStackTemp = [];
+  balanceSnapshots.clear();
   contract = await instantiateContract(importer);
+}
+
+export function finalizeTransaction() {
+  for (let [key, value] of tmpState.entries()) {
+    stateCache.set(key, value);
+  }
+  tmpState.clear();
+
+  ledgerStack.push(...ledgerStackTemp);
+  ledgerStackTemp = [];
+}
+
+function getBalanceSnapshot(account: string): BalanceSnapshot {
+  if (balanceSnapshots.has(account)) {
+    const balance = balanceSnapshots.get(account)!;
+    const combinedLedger = [...ledgerStack, ...ledgerStackTemp];
+    const hbdBal = combinedLedger
+      .filter(e => e.amount && e.unit === "HBD")
+      .map(e => e.amount)
+      .reduce((acc, cur) => acc + cur, balance.tokens["HBD"]);
+    const hiveBal = combinedLedger
+      .filter(e => e.amount && e.unit === "HIVE")
+      .map(e => e.amount)
+      .reduce((acc, cur) => acc + cur, balance.tokens["HIVE"]);
+
+    return {
+      account: account,
+      tokens: {
+        HIVE: hiveBal,
+        HBD: hbdBal,
+      },
+    };
+  } else {
+    const balanceSnapshot: BalanceSnapshot = {
+      account: account,
+      tokens: {
+        HIVE: 0,
+        HBD: 0,
+      },
+    };
+    balanceSnapshots.set(account, balanceSnapshot);
+    return balanceSnapshot;
+  }
+}
+
+function applyLedgerOp(op: LedgerType) {
+  ledgerStackTemp.push(op);
+}
+
+function verifyIntent(
+  name: string,
+  conditions?: Record<string, Query<string | number>>
+): boolean {
+  for (let intent of intents) {
+    if (intent.name !== name) {
+      continue;
+    }
+
+    for (let conditionName in conditions) {
+      const filterData = conditions[conditionName];
+      const filter = sift(filterData);
+
+      if (!filter(intent.args[conditionName])) {
+        return false;
+      }
+    }
+    return true;
+  }
+  return false;
 }
 
 /**
@@ -145,6 +293,135 @@ const contractCalls = {
       return false;
     }
   },
+  "hive.getbalance": (value: string) => {
+    const args: {
+      account: string;
+      tag?: string;
+    } = JSON.parse(value);
+    const snapshot = getBalanceSnapshot(
+      `${args.account}${args.tag ? "#" + args.tag.replace("#", "") : ""}`
+    );
+
+    return {
+      result: snapshot.tokens,
+    };
+  },
+  //Pulls token balance from user transction
+  "hive.draw": (value: string) => {
+    const args: {
+      from: string;
+      amount: number;
+      asset: "HIVE" | "HBD";
+    } = JSON.parse(value);
+    const snapshot = getBalanceSnapshot(args.from);
+
+    //Total amount drawn from ledgerStack during this execution
+    const totalAmountDrawn = Math.abs(
+      ledgerStackTemp
+        .filter(
+          sift({
+            owner: args.from,
+            to: contract_id,
+            unit: args.asset,
+          })
+        )
+        .reduce((acc: any, cur: { amount: any }) => acc + cur.amount, 0)
+    );
+
+    const allowedByIntent = verifyIntent("hive.allow_transfer", {
+      token: {
+        $eq: args.asset.toLowerCase(),
+      },
+      limit: {
+        $gte: args.amount + totalAmountDrawn,
+      },
+    });
+
+    if (!allowedByIntent) {
+      return {
+        result: "MISSING_INTENT_HEADER",
+      };
+    }
+
+    if (snapshot.tokens[args.asset] >= args.amount) {
+      applyLedgerOp({
+        owner: args.from,
+        to: contract_id,
+        amount: -args.amount,
+        unit: args.asset,
+      });
+      applyLedgerOp({
+        from: args.from,
+        owner: contract_id,
+        amount: args.amount,
+        unit: args.asset,
+      });
+      return {
+        result: "SUCCESS",
+      };
+    } else {
+      return {
+        result: "INSUFFICIENT_FUNDS",
+      };
+    }
+  },
+  //Transfer tokens owned by contract to another user or
+  "hive.transfer": (value: string) => {
+    const args: {
+      dest: string;
+      amount: number;
+      asset: "HIVE" | "HBD";
+    } = JSON.parse(value);
+    const snapshot = getBalanceSnapshot(contract_id);
+    if (snapshot.tokens[args.asset] >= args.amount) {
+      applyLedgerOp({
+        owner: contract_id,
+        to: args.dest,
+        amount: -args.amount,
+        unit: args.asset,
+      });
+      applyLedgerOp({
+        owner: args.dest,
+        from: contract_id,
+        amount: args.amount,
+        unit: args.asset,
+      });
+
+      return {
+        result: "SUCCESS",
+      };
+    } else {
+      return {
+        result: "INSUFFICIENT_FUNDS",
+      };
+    }
+  },
+  //Triggers withdrawal of tokens owned by contract
+  "hive.withdraw": (value: string) => {
+    const args: {
+      dest: string;
+      amount: number;
+      asset: "HIVE" | "HBD";
+    } = JSON.parse(value);
+    const snapshot = getBalanceSnapshot(contract_id);
+
+    if (snapshot.tokens[args.asset] >= args.amount) {
+      applyLedgerOp({
+        owner: contract_id,
+        to: "#withdraw",
+        amount: -args.amount,
+        unit: args.asset,
+        dest: args.dest,
+      });
+      return {
+        result: "SUCCESS",
+      };
+    } else {
+      return {
+        result: "INSUFFICIENT_FUNDS",
+      };
+    }
+  },
 };
 
 const globals = {
@@ -170,6 +447,10 @@ const globals = {
   Date: {},
   Math: {},
   sdk: {
+    revert() {
+      ledgerStackTemp = [];
+      tmpState.clear();
+    },
     console: {
       get log() {
         return globals.sdk["console.log"];
