@@ -1,4 +1,5 @@
 {
   "./**/*.{ts,html,json}": "npm run format:scripts",
-  "./**/*.{css,scss}": "npm run format:styles"
+  "./**/*.{css,scss}": "npm run format:styles",
+  "./LICENSE.md": "",
 }
