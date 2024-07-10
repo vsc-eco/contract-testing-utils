@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { contract } from "../src/mocks";
+import { contract_id, contractEnv, setContractId } from "../src/mocks";
 
-describe("add", () => {
-  it("should sum of 2 and 3 equals to 5", () => {
-    console.log(contract);
+describe("contract_id", () => {
+  it("should update contractEnv.contract_id when changed", () => {
+    expect(contract_id).toStrictEqual(contractEnv.contract_id);
+    expect(contract_id).not.toStrictEqual("test");
+    setContractId("test");
+    expect(contract_id).toStrictEqual(contractEnv.contract_id);
+    expect(contract_id).toStrictEqual("test");
   });
 });

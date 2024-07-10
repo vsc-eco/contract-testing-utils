@@ -45,7 +45,7 @@ if (typeof globalThis.alert !== "undefined") {
  * @default
  * bech32.encode("vs4", bech32.toWords(new Uint8Array(32)))
  */
-export let contract_id: string = bech32.encode(
+export let contract_id: Readonly<string> = bech32.encode(
   "vs4",
   bech32.toWords(new Uint8Array(32))
 );
@@ -77,6 +77,8 @@ export let contractEnv: {
   "msg.sender": string;
   "msg.required_auths": Array<string>;
   "tx.origin": string;
+
+  get contract_id(): string;
 } = {
   "anchor.id": "",
   "anchor.block": "",
@@ -86,6 +88,8 @@ export let contractEnv: {
   "msg.sender": "",
   "msg.required_auths": [],
   "tx.origin": "",
+
+  contract_id,
 };
 /**
  * Cache for current contract state
@@ -124,6 +128,12 @@ export let intents: {
 export let contract: Awaited<
   ReturnType<VscContractTestingUtils.ContractType["instantiate"]>
 >;
+
+export function setContractId(id: string) {
+  contract_id = id;
+  // @ts-ignore this readonly can be ignored this type is just so consumers of the library don't modify this field directly
+  contractEnv.contract_id = id;
+}
 
 async function instantiateContract<
   R,
@@ -189,6 +199,8 @@ export async function reset() {
     "msg.sender": "",
     "msg.required_auths": [],
     "tx.origin": "",
+
+    contract_id,
   };
   stateCache.clear();
   tmpState.clear();
