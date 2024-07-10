@@ -153,10 +153,11 @@ async function instantiateContract<
           globalThis.fetch(url)
         );
       } catch {
+        const URL = await import("node:url");
         return globalThis.WebAssembly.compile(
           await (
             await import("node:fs/promises")
-          ).readFile(url.slice("file://".length))
+          ).readFile(URL.fileURLToPath(url))
         );
       }
     })(),
