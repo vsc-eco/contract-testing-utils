@@ -30,7 +30,7 @@ export type BalanceSnapshot = {
 };
 
 if (typeof globalThis.alert !== "undefined") {
-  await import("mocha").then(Mocha => {
+  await import("mocha").then(({ default: Mocha }) => {
     Mocha.setup("bdd");
     mocha.timeout(0);
     setTimeout(() => Mocha.run(), 1000);
