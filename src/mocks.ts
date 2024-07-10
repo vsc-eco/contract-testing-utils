@@ -249,7 +249,7 @@ function verifyIntent(
   name: string,
   conditions?: Record<string, Query<string | number>>
 ): boolean {
-  for (let intent of intents) {
+  intentsLoop: for (let intent of intents) {
     if (intent.name !== name) {
       continue;
     }
@@ -259,7 +259,7 @@ function verifyIntent(
       const filter = sift(filterData);
 
       if (!filter(intent.args[conditionName])) {
-        return false;
+        continue intentsLoop;
       }
     }
     return true;
