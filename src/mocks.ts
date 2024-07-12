@@ -502,13 +502,17 @@ const globals = {
         return globals.sdk["db.delObject"];
       },
     },
-    "db.setObject": (keyPtr: string, valPtr: string) => {
+    "db.setObject": (keyPtr: string, valPtr: string | null) => {
       const key = keyPtr; //(insta as any).exports.__getString(keyPtr);
       const val = valPtr; //(insta as any).exports.__getString(valPtr);
 
-      IOGas = IOGas + key.length + val.length;
+      IOGas = IOGas + key.length + (val?.length || 0);
 
-      stateCache.set(key, val);
+      if (val === null) {
+        stateCache.delete(key);
+      } else {
+        stateCache.set(key, val);
+      }
       return 1;
     },
     "db.getObject": (keyPtr: string) => {
