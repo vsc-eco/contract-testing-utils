@@ -35,6 +35,8 @@ if (typeof globalThis.alert !== "undefined") {
     mocha.timeout(0);
     setTimeout(() => Mocha.run(), 1000);
   });
+  //@ts-ignore
+  globalThis.beforeAll = globalThis.beforeAll || globalThis.before;
 }
 
 /**
