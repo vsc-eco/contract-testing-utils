@@ -153,7 +153,7 @@ async function instantiateContract<
           globalThis.fetch(url)
         );
       } catch {
-        const URL = await import("node:url");
+        const URL = await import("url");
         return globalThis.WebAssembly.compile(
           await (
             await import("node:fs/promises")
