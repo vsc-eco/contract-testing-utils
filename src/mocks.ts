@@ -94,6 +94,10 @@ export let contractEnv: {
   contract_id,
 };
 /**
+ * State for initial contract for testing
+ */
+export const initializationState = new Map<string, string>();
+/**
  * Cache for current contract state
  */
 export const stateCache = new Map<string, string>();
@@ -517,13 +521,34 @@ const globals = {
     },
     "db.getObject": (keyPtr: string) => {
       const key = keyPtr; //(insta as any).exports.__getString(keyPtr);
-      const value = stateCache.get(key) ?? null;
+      let value: any = "null";
+
+      if (tmpState.has(key)) {
+        value = tmpState.get(key);
+      } else if (stateCache.has(key)) {
+        value = stateCache.get(key);
+      } else {
+        const keyHierarchy = key.split("/");
+
+        let objectToAccess: any = initializationState.get(
+          keyHierarchy[0] as string
+        );
+        if (typeof objectToAccess == "object") {
+          for (const subKey of keyHierarchy.slice(1)) {
+            objectToAccess = objectToAccess[subKey];
+          }
+        }
+
+        value = objectToAccess;
+
+        tmpState.set(key, value);
+      }
 
       const val = JSON.stringify(value);
 
       IOGas = IOGas + val.length; // Total serialized length of gas
 
-      return value ?? "null"; //insta.exports.__newString(val);
+      return val ?? "null"; //insta.exports.__newString(val);
     },
     "db.delObject": (keyPtr: string) => {
       const key = keyPtr; //(insta as any).exports.__getString(keyPtr);
@@ -567,3 +592,5 @@ const globals = {
     },
   },
 };
+
+export const testme = globals;
