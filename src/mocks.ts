@@ -512,35 +512,24 @@ const globals = {
 
       IOGas = IOGas + key.length + (val?.length || 0);
 
-      if (val === null) {
-        stateCache.delete(key);
-      } else {
-        stateCache.set(key, val);
-      }
+      // if (val === null) {
+      //   stateCache.delete(key);
+      // } else {
+      //   stateCache.set(key, val);
+      // }
+      tmpState.set(key, val!);
       return 1;
     },
     "db.getObject": (keyPtr: string) => {
       const key = keyPtr; //(insta as any).exports.__getString(keyPtr);
-      let value: any = "null";
+      let value;
 
       if (tmpState.has(key)) {
         value = tmpState.get(key);
       } else if (stateCache.has(key)) {
         value = stateCache.get(key);
       } else {
-        const keyHierarchy = key.split("/");
-
-        let objectToAccess: any = initializationState.get(
-          keyHierarchy[0] as string
-        );
-        if (typeof objectToAccess == "object") {
-          for (const subKey of keyHierarchy.slice(1)) {
-            objectToAccess = objectToAccess[subKey];
-          }
-        }
-
-        value = objectToAccess;
-
+        value = initializationState.get(key) ?? "null";
         tmpState.set(key, value);
       }
 
@@ -552,7 +541,7 @@ const globals = {
     },
     "db.delObject": (keyPtr: string) => {
       const key = keyPtr; //(insta as any).exports.__getString(keyPtr);
-      stateCache.delete(key);
+      tmpState.set(key, "null");
     },
     system: {
       get getEnv() {
