@@ -34,6 +34,7 @@
   "dependencies": {
     "@summa-tx/bitcoin-spv-js": "^4.0.2",
     "assemblyscript": "^0.27.27",
+    "axios": "^1.7.7",
     "bech32": "^2.0.0",
     "bitcoinjs-lib": "^6.1.5",
     "mocha": "^10.4.0",
