@@ -512,12 +512,11 @@ const globals = {
 
       IOGas = IOGas + key.length + (val?.length || 0);
 
-      // if (val === null) {
-      //   stateCache.delete(key);
-      // } else {
-      //   stateCache.set(key, val);
-      // }
-      tmpState.set(key, val!);
+      if (val === null || val === "null") {
+        tmpState.delete(key);
+      } else {
+        tmpState.set(key, val);
+      }
       return 1;
     },
     "db.getObject": (keyPtr: string) => {
@@ -533,11 +532,9 @@ const globals = {
         tmpState.set(key, value);
       }
 
-      const val = JSON.stringify(value);
+      IOGas = IOGas + JSON.stringify(value).length; // Total serialized length of gas
 
-      IOGas = IOGas + val.length; // Total serialized length of gas
-
-      return val ?? "null"; //insta.exports.__newString(val);
+      return value;
     },
     "db.delObject": (keyPtr: string) => {
       const key = keyPtr; //(insta as any).exports.__getString(keyPtr);
