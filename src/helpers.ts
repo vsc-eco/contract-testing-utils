@@ -1,8 +1,28 @@
 import { initializationState } from "./mocks";
 
-async function TMPsimulateLiveTx(
-  inputTxId: string,
-  vscApi = "https://api.vsc.eco:443"
+function getVscApi() {
+  let vscApi;
+
+  // Check if running in Node.js environment
+  if (typeof process !== "undefined" && process.env && process.env.VSC_API) {
+    vscApi = process.env.VSC_API; // Node.js
+  } 
+  // Check if running in a browser environment with injected env variables
+  else if (typeof window !== "undefined" && (window as any).VSC_API) {
+    vscApi = (window as any).VSC_API; // Browser (custom global variable or injected)
+  } 
+  // Fallback for build-time environment variables (e.g., Webpack, Vite)
+  else if (typeof process !== "undefined" && process.env && process.env.NODE_ENV === "production") {
+    vscApi = process.env.VSC_API; // Production build (like Webpack or Vite)
+  } else {
+    return "https://api.vsc.eco:443"
+  }
+
+  return vscApi;
+}
+
+async function simulateLiveTx(
+  inputTxId: string
 ) {
   const OUTPUT_TX_GQL = `
       query MyQuery($inputTxId: String) {
@@ -32,7 +52,7 @@ async function TMPsimulateLiveTx(
   `;
 
   const fetchGraphQL = async (query: any, variables: any) => {
-    const response = await fetch(`${vscApi}/api/v1/graphql`, {
+    const response = await fetch(`${getVscApi()}/api/v1/graphql`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
