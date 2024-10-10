@@ -1,4 +1,5 @@
 import { initializationState } from "./mocks";
+import fetch from "cross-fetch"; // Using cross-fetch for universal fetch support
 
 function getVscApi() {
   let vscApi;
