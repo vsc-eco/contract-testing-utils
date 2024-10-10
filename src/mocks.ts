@@ -94,6 +94,10 @@ export let contractEnv: {
   contract_id,
 };
 /**
+ * State for initial contract for testing
+ */
+export const initializationState = new Map<string, string>();
+/**
  * Cache for current contract state
  */
 export const stateCache = new Map<string, string>();
@@ -508,26 +512,33 @@ const globals = {
 
       IOGas = IOGas + key.length + (val?.length || 0);
 
-      if (val === null) {
-        stateCache.delete(key);
+      if (val === null || val === "null") {
+        tmpState.delete(key);
       } else {
-        stateCache.set(key, val);
+        tmpState.set(key, val);
       }
       return 1;
     },
     "db.getObject": (keyPtr: string) => {
       const key = keyPtr; //(insta as any).exports.__getString(keyPtr);
-      const value = stateCache.get(key) ?? null;
+      let value;
 
-      const val = JSON.stringify(value);
+      if (tmpState.has(key)) {
+        value = tmpState.get(key);
+      } else if (stateCache.has(key)) {
+        value = stateCache.get(key);
+      } else {
+        value = initializationState.get(key) ?? "null";
+        tmpState.set(key, value);
+      }
 
-      IOGas = IOGas + val.length; // Total serialized length of gas
+      IOGas = IOGas + JSON.stringify(value).length; // Total serialized length of gas
 
-      return value ?? "null"; //insta.exports.__newString(val);
+      return value;
     },
     "db.delObject": (keyPtr: string) => {
       const key = keyPtr; //(insta as any).exports.__getString(keyPtr);
-      stateCache.delete(key);
+      tmpState.set(key, "null");
     },
     system: {
       get getEnv() {
