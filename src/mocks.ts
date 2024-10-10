@@ -578,5 +578,3 @@ const globals = {
     },
   },
 };
-
-export const testme = globals;

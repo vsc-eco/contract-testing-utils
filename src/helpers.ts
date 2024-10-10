@@ -25,7 +25,7 @@ function getVscApi() {
   return vscApi;
 }
 
-async function simulateLiveTx(inputTxId: string) {
+export async function simulateLiveTx(inputTxId: string) {
   const OUTPUT_TX_GQL = `
       query MyQuery($inputTxId: String) {
         contractStateDiff(id: $inputTxId){
