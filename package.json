@@ -36,6 +36,7 @@
     "assemblyscript": "^0.27.27",
     "bech32": "^2.0.0",
     "bitcoinjs-lib": "^6.1.5",
+    "cross-fetch": "^4.0.0",
     "mocha": "^10.4.0",
     "sift": "^17.1.3",
     "url": "^0.11.4"
