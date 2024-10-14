@@ -100,13 +100,13 @@ export const initializationState = new Map<string, string>();
 /**
  * Cache for current contract state
  */
-export const stateCache = new Map<string, string>();
+export const stateCache = new Map<string, string | null>();
 /**
  * @readonly
  * Temporary cache for current contract state before transaction is finalized
  * @see {@link finalizeTransaction}
  */
-export const tmpState = new Map<string, string>();
+export const tmpState = new Map<string, string | null>();
 /**
  * HBD & Hive balances for all addresses
  */
@@ -508,15 +508,19 @@ const globals = {
     },
     "db.setObject": (keyPtr: string, valPtr: string | null) => {
       const key = keyPtr; //(insta as any).exports.__getString(keyPtr);
-      const val = valPtr; //(insta as any).exports.__getString(valPtr);
+      let val = valPtr; //(insta as any).exports.__getString(valPtr);
 
       IOGas = IOGas + key.length + (val?.length || 0);
 
-      if (val === null || val === "null") {
-        tmpState.delete(key);
-      } else {
-        tmpState.set(key, val);
+      if (val !== null) {
+        try {
+          val = JSON.parse(val);
+        } catch (e) {
+          throw new Error(`Invalid JSON object: ${val}`);
+        }
       }
+
+      tmpState.set(key, val);
       return 1;
     },
     "db.getObject": (keyPtr: string) => {
@@ -528,17 +532,18 @@ const globals = {
       } else if (stateCache.has(key)) {
         value = stateCache.get(key);
       } else {
-        value = initializationState.get(key) ?? "null";
+        value = initializationState.get(key) ?? null;
         tmpState.set(key, value);
       }
 
-      IOGas = IOGas + JSON.stringify(value).length; // Total serialized length of gas
+      const val = JSON.stringify(value);
+      IOGas = IOGas + val.length; // Total serialized length of gas
 
-      return value;
+      return val ?? "null"; //insta.exports.__newString(val);
     },
     "db.delObject": (keyPtr: string) => {
       const key = keyPtr; //(insta as any).exports.__getString(keyPtr);
-      tmpState.set(key, "null");
+      tmpState.set(key, null);
     },
     system: {
       get getEnv() {
