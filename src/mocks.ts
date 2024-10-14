@@ -512,6 +512,7 @@ const globals = {
 
       IOGas = IOGas + key.length + (val?.length || 0);
 
+      // this check is only in place in the test setup, because in the prod environment IPFS automatically parses the JSON object
       if (val !== null) {
         try {
           val = JSON.parse(val);
