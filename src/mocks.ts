@@ -96,17 +96,17 @@ export let contractEnv: {
 /**
  * State for initial contract for testing
  */
-export const initializationState = new Map<string, string>();
+export const initializationState = new Map<string, object>();
 /**
  * Cache for current contract state
  */
-export const stateCache = new Map<string, string | null>();
+export const stateCache = new Map<string, object | null>();
 /**
  * @readonly
  * Temporary cache for current contract state before transaction is finalized
  * @see {@link finalizeTransaction}
  */
-export const tmpState = new Map<string, string | null>();
+export const tmpState = new Map<string, object | null>();
 /**
  * HBD & Hive balances for all addresses
  */
@@ -508,20 +508,21 @@ const globals = {
     },
     "db.setObject": (keyPtr: string, valPtr: string | null) => {
       const key = keyPtr; //(insta as any).exports.__getString(keyPtr);
-      let val = valPtr; //(insta as any).exports.__getString(valPtr);
+      const val = valPtr; //(insta as any).exports.__getString(valPtr);
+      let setValue: object | null = null;
 
       IOGas = IOGas + key.length + (val?.length || 0);
 
       // this check is only in place in the test setup, because in the prod environment IPFS automatically parses the JSON object
       if (val !== null) {
         try {
-          val = JSON.parse(val);
+          setValue = JSON.parse(val);
         } catch (e) {
           throw new Error(`Invalid JSON object: ${val}`);
         }
       }
 
-      tmpState.set(key, val);
+      tmpState.set(key, setValue);
       return 1;
     },
     "db.getObject": (keyPtr: string) => {
