@@ -1,4 +1,4 @@
-import { initializationState } from "./mocks";
+import { contract, initializationState } from "./mocks";
 import fetch from "cross-fetch"; // Using cross-fetch for universal fetch support
 
 function getVscApi() {
@@ -93,7 +93,7 @@ export async function simulateLiveTx(inputTxId: string) {
 
   console.log("action", action);
   console.log("inputData", inputData);
-  console.log("initializationState", initializationState);
+  console.log("state", state);
 
-  // contract[action](inputData);
+  contract[action](inputData);
 }
